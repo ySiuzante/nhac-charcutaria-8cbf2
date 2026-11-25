@@ -2,8 +2,6 @@
 
 const authConfig = window.nhacSupabaseConfig;
 const nhacAuth = window.supabase?.createClient(authConfig.url, authConfig.publishableKey);
-let enrollmentId;
-let pendingPhone;
 
 function result(status, data) {
   return Response.json(data, { status });
@@ -49,10 +47,6 @@ async function sessionProfile() {
   const { session } = checked(await auth.auth.getSession());
   if (!session) return result(401, { error: "Entre na sua conta." });
   const profile = checked(await auth.rpc("nhac_api", { operation: "profile" }));
-  if (["MAIN", "STAFF"].includes(profile.user.role)) {
-    const { currentLevel } = checked(await auth.auth.mfa.getAuthenticatorAssuranceLevel());
-    if (currentLevel !== "aal2") return result(428, { error: "Confirme seu autenticador." });
-  }
   return result(200, profile);
 }
 
@@ -66,49 +60,6 @@ function authError(error) {
 }
 
 window.nhacHosted = {
-  smsMfaEnabled: authConfig.smsMfa === true,
-  async getPhoneFactor() {
-    if (!window.nhacHosted.smsMfaEnabled) return null;
-    const { all } = checked(await requireAuthClient().auth.mfa.listFactors());
-    return all.find(factor => factor.factor_type === "phone" && factor.status === "verified")?.id ?? null;
-  },
-  async sendPhoneCode(phone, factorId) {
-    if (!window.nhacHosted.smsMfaEnabled) throw new Error("A confirmação por SMS ainda não está disponível.");
-    const { mfa } = requireAuthClient().auth;
-    try {
-      if (!factorId) {
-        if (!/^\+[1-9][0-9]{7,14}$/.test(phone)) throw new Error("invalid_phone_input");
-        const { all } = checked(await mfa.listFactors());
-        const verified = all.find(factor => factor.factor_type === "phone" && factor.status === "verified");
-        if (verified) throw new Error("already_verified_phone");
-        const unverified = all.filter(factor => factor.factor_type === "phone" && factor.status === "unverified");
-        if (!unverified.some(factor => factor.id === pendingPhone?.id && pendingPhone.phone === phone)) {
-          pendingPhone = undefined;
-          for (const factor of unverified) checked(await mfa.unenroll({factorId:factor.id}));
-          const enrolled = checked(await mfa.enroll({factorType:"phone", phone, friendlyName:"SMS Nhac!"}));
-          pendingPhone = {id:enrolled.id, phone};
-        }
-        factorId = pendingPhone.id;
-      }
-      const challenge = checked(await mfa.challenge({factorId, channel:"sms"}));
-      return {factorId, challengeId:challenge.id};
-    } catch (error) {
-      if (error.message === "invalid_phone_input") throw new Error("Informe o telefone com código do país e DDD.");
-      if (error.message === "already_verified_phone") throw new Error("Já existe um telefone verificado nesta conta. Atualize a página.");
-      if (error.status === 429) throw new Error("Aguarde antes de solicitar outro SMS.");
-      throw new Error("O SMS não pôde ser enviado. Confira o número ou use seu aplicativo autenticador.");
-    }
-  },
-  async verifyPhoneCode({factorId, challengeId}, code) {
-    if (!window.nhacHosted.smsMfaEnabled) throw new Error("A confirmação por SMS ainda não está disponível.");
-    try {
-      checked(await requireAuthClient().auth.mfa.verify({factorId, challengeId, code}));
-      pendingPhone = undefined;
-    } catch (error) {
-      if (error.status === 429) throw new Error("Muitas tentativas. Aguarde e tente novamente.");
-      throw new Error("Código inválido ou expirado. Confira o SMS ou solicite outro código.");
-    }
-  },
   async request(path, options = {}) {
     const url = new URL(path, location.origin);
     const method = options.method || "GET";
@@ -163,34 +114,7 @@ window.nhacHosted = {
     });
     if (error) throw new Error(authError(error));
   },
-  async hasAuthenticator() {
-    const { totp } = checked(await requireAuthClient().auth.mfa.listFactors());
-    return totp.length > 0;
-  },
-  async enroll() {
-    const auth = requireAuthClient();
-    const { all } = checked(await auth.auth.mfa.listFactors());
-    for (const factor of all) {
-      if (factor.factor_type === "totp" && factor.status === "unverified") {
-        checked(await auth.auth.mfa.unenroll({ factorId: factor.id }));
-      }
-    }
-    const response = checked(await auth.auth.mfa.enroll({ factorType: "totp", issuer: "Nhac!" }));
-    enrollmentId = response.id;
-    return response.totp.secret;
-  },
-  async verify(code) {
-    const auth = requireAuthClient();
-    const { totp } = checked(await auth.auth.mfa.listFactors());
-    const factorId = enrollmentId || totp[0]?.id;
-    if (!factorId) throw new Error("Configure o autenticador antes de informar o código.");
-    const { error } = await auth.auth.mfa.challengeAndVerify({ factorId, code });
-    if (error) throw new Error("Confira o código do autenticador e tente novamente.");
-    enrollmentId = undefined;
-  },
   async signOut() {
-    enrollmentId = undefined;
-    pendingPhone = undefined;
     checked(await requireAuthClient().auth.signOut({ scope: "local" }));
   },
 };

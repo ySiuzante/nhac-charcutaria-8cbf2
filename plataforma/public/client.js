@@ -14,23 +14,9 @@ const registerToggle = document.querySelector("#register-toggle");
 const registerPrompt = document.querySelector("#register-prompt");
 const accountMenu = document.querySelector("#account-menu");
 const accountNavigation = document.querySelector("#account-navigation");
-const mfaForm = document.querySelector("#mfa-form");
-const mfaMessage = document.querySelector("#mfa-message");
-const mfaEnroll = document.querySelector("#mfa-enroll");
-const mfaSecret = document.querySelector("#mfa-secret");
-const smsLogin = document.querySelector("#sms-login");
-const smsMethod = document.querySelector("#sms-use-app");
-let smsLoginFlow;
-
 function switchAuth(form) {
   loginForm.hidden = form !== loginForm;
   registerForm.hidden = form !== registerForm;
-  mfaForm.hidden = form !== mfaForm;
-  smsLogin.hidden = form !== smsLogin;
-  if (smsLogin.hidden && smsLoginFlow) {
-    smsLoginFlow.dispose();
-    smsLoginFlow = undefined;
-  }
   registerPrompt.hidden = !window.nhacHosted || form !== loginForm;
 }
 
@@ -95,78 +81,6 @@ registerForm.addEventListener("submit", async event => {
   } finally { button.disabled = false; }
 });
 
-async function showAppVerification(fromSms = false) {
-  switchAuth(mfaForm);
-  document.querySelector("#mfa-use-sms").hidden = !fromSms;
-  mfaSecret.hidden = true;
-  mfaSecret.textContent = "";
-  mfaMessage.textContent = "";
-  mfaEnroll.hidden = await window.nhacHosted.hasAuthenticator();
-  (mfaEnroll.hidden ? document.querySelector("#mfa-code") : mfaEnroll).focus();
-}
-
-async function showVerification() {
-  if (window.nhacHosted.smsMfaEnabled) {
-    const phoneFactor = await window.nhacHosted.getPhoneFactor();
-    const hasApp = await window.nhacHosted.hasAuthenticator();
-    if (phoneFactor || !hasApp) {
-      smsMethod.hidden = Boolean(phoneFactor) && !hasApp;
-      smsLoginFlow?.dispose();
-      switchAuth(smsLogin);
-      smsLoginFlow = window.nhacPhoneVerification.mount(
-        document.querySelector("#sms-login-form"), phoneFactor, refreshSession
-      );
-      smsLoginFlow.focus();
-      return;
-    }
-  }
-  await showAppVerification();
-}
-
-smsMethod.addEventListener("click", async () => {
-  try { await showAppVerification(true); }
-  catch (error) { mfaMessage.textContent = "Não foi possível carregar o autenticador. Tente entrar novamente."; }
-});
-
-document.querySelector("#mfa-use-sms").addEventListener("click", async () => {
-  try { await showVerification(); }
-  catch { mfaMessage.textContent = "Não foi possível carregar o acesso por SMS."; }
-});
-
-mfaEnroll.addEventListener("click", async () => {
-  mfaEnroll.disabled = true;
-  try {
-    const secret = await window.nhacHosted.enroll();
-    mfaSecret.textContent = "Adicione esta chave ao seu autenticador e confirme com o código de seis dígitos. " + secret;
-    mfaSecret.hidden = false;
-    mfaEnroll.hidden = true;
-    document.querySelector("#mfa-code").focus();
-  } catch (error) { mfaMessage.textContent = error.message; }
-  finally { mfaEnroll.disabled = false; }
-});
-mfaForm.addEventListener("submit", async event => {
-  event.preventDefault();
-  const button = mfaForm.querySelector('button[type="submit"]');
-  button.disabled = true;
-  try {
-    await window.nhacHosted.verify(document.querySelector("#mfa-code").value);
-    mfaForm.reset();
-    mfaSecret.textContent = "";
-    await refreshSession();
-  } catch (error) { mfaMessage.textContent = error.message; }
-  finally { button.disabled = false; }
-});
-async function exitVerification(errorTarget) {
-  try {
-    await window.nhacHosted.signOut();
-    mfaSecret.textContent = "";
-    mfaForm.reset();
-    switchAuth(loginForm);
-  } catch (error) { errorTarget.textContent = error.message; }
-}
-document.querySelector("#mfa-back").addEventListener("click", () => exitVerification(mfaMessage));
-document.querySelector("#sms-back").addEventListener("click", () => exitVerification(document.querySelector("[data-sms-status]")));
-
 function showAccount(user) {
   accountPermissions = new Set(user.permissions || []);
   const staff = ["MAIN", "STAFF"].includes(user.role);
@@ -212,7 +126,6 @@ async function loadAccounts() {
 
 async function refreshSession() {
   const response = await request("/api/auth/me", { credentials: "same-origin" });
-  if (response.status === 428) return showVerification();
   if (response.ok) {
     const data = await response.json();
     csrfToken = data.csrfToken;
@@ -231,10 +144,6 @@ loginForm.addEventListener("submit", async (event) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(Object.fromEntries(new FormData(loginForm)))
     });
-    if (response.status === 428) {
-      loginForm.reset();
-      return await showVerification();
-    }
     if (!response.ok) {
       const detail = window.nhacHosted ? (await response.json()).error : null;
       message.textContent = detail || (response.status === 429

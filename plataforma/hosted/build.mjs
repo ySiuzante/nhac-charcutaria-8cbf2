@@ -9,7 +9,7 @@ await mkdir(platform, { recursive: true });
 for (const file of ['app.js', 'estilo.css', 'assets']) {
   await cp(resolve(workspace, file), resolve(output, file), { recursive: true });
 }
-for (const file of ['client.js', 'shop.js', 'styles.css', 'dashboard.js', 'dashboard.css', 'staff.js', 'phone-mfa.js']) {
+for (const file of ['client.js', 'shop.js', 'styles.css', 'dashboard.js', 'dashboard.css', 'staff.js']) {
   await cp(resolve(publicDir, file), resolve(platform, file));
 }
 for (const file of ['config.js', 'supabase-client.js']) {
@@ -26,16 +26,10 @@ const portal = (await readFile(resolve(publicDir, 'index.html'), 'utf8'))
   .replace('src="/shop.js"', 'src="/plataforma/shop.js"')
   .replace('src="/dashboard.js"', 'src="/plataforma/dashboard.js"')
   .replace('src="/staff.js"', 'src="/plataforma/staff.js"')
-  .replace('src="/phone-mfa.js"', 'src="/plataforma/phone-mfa.js"')
   .replace('href="/dashboard.css"', 'href="/plataforma/dashboard.css"')
   .replace('href="https://ysiuzante.github.io/nhac-charcutaria/"', 'href="/"')
   .replace('Os acessos são disponibilizados pela equipe responsável pela Nhac!.', 'Use o mesmo acesso para a loja e o painel administrativo.');
 await writeFile(resolve(platform, 'index.html'), portal);
-if (process.env.NHAC_SMS_MFA === 'true') {
-  const configPath = resolve(platform, 'config.js');
-  const config = await readFile(configPath, 'utf8');
-  await writeFile(configPath, config + '\nwindow.nhacSupabaseConfig.smsMfa = true;\n');
-}
 
 const html = await readFile(resolve(workspace, 'index.html'), 'utf8');
 const navigationEnd = '</nav>';
