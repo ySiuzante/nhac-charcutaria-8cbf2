@@ -12,6 +12,11 @@ const stockList = document.querySelector("#stock-list");
 const wholesaleForm = document.querySelector("#wholesale-form");
 const wholesaleList = document.querySelector("#wholesale-list");
 const priceList = document.querySelector("#price-list");
+const orderSearch = document.querySelector("#order-search");
+const paymentChoice = document.querySelector("#payment-choice");
+const paymentSelection = document.querySelector("#order-payment");
+const cutLabels = { original: "Apresentação padrão", whole: "Inteiro", sliced: "Fatiado", diced: "Em cubos" };
+const paymentLabels = { unspecified: "A combinar", pix: "Pix", card: "Cartão", cash: "Dinheiro", transfer: "Transferência" };
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const statuses = { received: "Recebido", preparing: "Em preparo", ready: "Pronto", cancelled: "Cancelado" };
 
@@ -81,21 +86,31 @@ function renderCatalog() {
     button.type = "button";
     button.disabled = product.stock < minimum;
     button.setAttribute("aria-label", `Adicionar ${minimum} de ${product.name}`);
+    const cuts = product.cut_options || ["original"];
+    const cutLabel = element("label", "Corte", "product-cut");
+    const cut = element("select");
+    cut.setAttribute("aria-label", `Corte de ${product.name}`);
+    for (const option of cuts) cut.add(new Option(cutLabels[option], option));
+    cutLabel.append(cut);
     button.addEventListener("click", () => withFeedback(async () => {
-      const inCart = cart.items.find(item => item.id === product.id)?.quantity || 0;
-      await setQuantity(product.id, inCart + minimum);
+      const selection = cut.value;
+      const inCart = cart.items.find(item => item.id === product.id && (item.cut || "original") === selection)?.quantity || 0;
+      await setQuantity(product.id, inCart + minimum, selection);
       shopMessage.textContent = `${product.name} no carrinho.`;
     }));
     copy.append(element("small", `${product.category} · ${product.package}`), element("h3", product.name),
-      element("p", product.description), element("strong", price), button);
+      element("p", product.description), element("strong", price));
+    if (cuts.length > 1) copy.append(cutLabel);
+    else if (cuts[0] !== "original") copy.append(element("p", cutLabels[cuts[0]], "product-cut-note"));
+    copy.append(button);
     card.append(image, copy);
     productList.append(card);
   }
   if (!productList.childElementCount) productList.append(element("p", "Nenhum produto encontrado."));
 }
 
-async function setQuantity(productId, quantity) {
-  cart = await shopApi("/api/shop/cart", { channel: shopChannel.value, productId, quantity });
+async function setQuantity(productId, quantity, cut) {
+  cart = await shopApi("/api/shop/cart", { channel: shopChannel.value, productId, quantity, cut });
   requestId = undefined;
 }
 
@@ -110,17 +125,19 @@ function renderCart() {
     quantity.min = item.minimum;
     quantity.max = Math.max(item.stock, item.quantity);
     quantity.value = item.quantity;
-    quantity.setAttribute("aria-label", `Quantidade de ${item.name}`);
-    quantity.addEventListener("change", () => withFeedback(() => setQuantity(item.id, quantity.valueAsNumber)));
+    const lineName = [item.name, item.cut && item.cut !== "original" && cutLabels[item.cut]].filter(Boolean).join(" · ");
+    quantity.setAttribute("aria-label", `Quantidade de ${lineName}`);
+    quantity.addEventListener("change", () => withFeedback(() => setQuantity(item.id, quantity.valueAsNumber, item.cut)));
     remove.type = "button";
-    remove.addEventListener("click", () => withFeedback(() => setQuantity(item.id, 0)));
+    remove.addEventListener("click", () => withFeedback(() => setQuantity(item.id, 0, item.cut)));
     const controls = element("div", undefined, "cart-controls");
     controls.append(quantity, remove);
-    row.append(element("strong", item.name), element("span", money.format(item.unit_cents * item.quantity / 100)), controls);
+    row.append(element("strong", lineName), element("span", money.format(item.unit_cents * item.quantity / 100)), controls);
     cartList.append(row);
   }
   document.querySelector("#cart-total").textContent = money.format(cart.total_cents / 100);
   checkoutButton.disabled = busy || !isDemo || !cart.items.length;
+  paymentChoice.hidden = !window.nhacHosted || !cart.items.length;
 }
 
 async function loadOrders(role) {
@@ -132,14 +149,21 @@ async function loadOrders(role) {
     const row = element("article", undefined, "order-card");
     const header = element("div", undefined, "order-heading");
     header.append(element("strong", `Pedido ${order.id.slice(0, 8).toUpperCase()}`), element("span", statuses[order.status]));
-    row.append(header, element("p", [isAdmin && order.customer, order.channel === "retail" ? "Varejo" : "Atacado", money.format(order.total_cents / 100)].filter(Boolean).join(" · ")));
+    row.dataset.orderSearch = `${order.id} ${order.customer || ""}`.toLocaleLowerCase("pt-BR");
+    row.append(header, element("p", [isAdmin && order.customer, order.channel === "retail" ? "Varejo" : "Atacado", money.format(order.total_cents / 100), order.created_at && new Intl.DateTimeFormat("pt-BR", {dateStyle:"short", timeStyle:"short", timeZone:"America/Sao_Paulo"}).format(new Date(order.created_at))].filter(Boolean).join(" · ")));
+    if (order.payment_status) row.append(element("p", `${paymentLabels[order.payment_method]} · ${order.payment_status === "confirmed" ? "Recebimento confirmado" : "Aguardando recebimento"}`, "order-payment-status"));
     const items = element("ul");
-    for (const item of order.items) items.append(element("li", `${item.quantity} × ${item.product_name}`));
+    for (const item of order.items || []) {
+      const cut = item.cut && item.cut !== "original" ? ` · ${cutLabels[item.cut]}` : "";
+      items.append(element("li", `${item.quantity} × ${item.product_name}${cut}`));
+    }
     row.append(items);
     if (isAdmin && ["received", "preparing"].includes(order.status)) {
       const actions = element("div", undefined, "order-actions");
       const next = order.status === "received" ? "preparing" : "ready";
-      for (const [status, label] of [[next, statuses[next]], ["cancelled", "Cancelar pedido"]]) {
+      const actionsForOrder = [[next, statuses[next]]];
+      if (order.payment_status !== "confirmed") actionsForOrder.push(["cancelled", "Cancelar pedido"]);
+      for (const [status, label] of actionsForOrder) {
         const button = element("button", label, "shop-add");
         button.type = "button";
         button.addEventListener("click", () => withFeedback(async () => {
@@ -147,13 +171,39 @@ async function loadOrders(role) {
           await shopApi("/api/admin/orders", { id: order.id, status });
           await loadOrders(role);
           shopMessage.textContent = "Status atualizado.";
+          document.dispatchEvent(new Event("nhac:orders-changed"));
         }));
         actions.append(button);
       }
       row.append(actions);
     }
+    if (isAdmin && order.payment_status === "pending" && order.status !== "cancelled") {
+      const form = element("form", undefined, "order-receipt");
+      const label = element("label", "Meio recebido");
+      const method = element("select");
+      method.required = true;
+      method.add(new Option("Selecione", ""));
+      for (const [key, name] of Object.entries(paymentLabels)) if (key !== "unspecified") method.add(new Option(name, key));
+      method.value = order.payment_method === "unspecified" ? "" : order.payment_method;
+      const save = element("button", "Registrar recebimento", "shop-add");
+      save.type = "submit";
+      label.append(method);
+      form.append(label, save);
+      form.addEventListener("submit", event => {
+        event.preventDefault();
+        withFeedback(async () => {
+          if (!window.confirm("Confirma que este pedido foi pago fora da plataforma?")) return;
+          await shopApi("/api/admin/payment", { id: order.id, paymentMethod: method.value });
+          await loadOrders(role);
+          document.dispatchEvent(new Event("nhac:orders-changed"));
+          shopMessage.textContent = "Recebimento registrado.";
+        });
+      });
+      row.append(form);
+    }
     orderList.append(row);
   }
+  filterOrders();
   if (isAdmin) {
     renderPrices(result.products);
     stockList.replaceChildren();
@@ -174,6 +224,14 @@ async function loadOrders(role) {
     }
   }
 }
+
+function filterOrders() {
+  const query = orderSearch.value.trim().toLocaleLowerCase("pt-BR");
+  for (const order of orderList.querySelectorAll("[data-order-search]")) {
+    order.hidden = !order.dataset.orderSearch.includes(query);
+  }
+}
+orderSearch.addEventListener("input", filterOrders);
 
 function renderPrices(products) {
   priceList.replaceChildren();
@@ -237,7 +295,7 @@ shopChannel.addEventListener("change", () => withFeedback(async () => {
 }));
 checkoutButton.addEventListener("click", () => withFeedback(async () => {
   requestId ||= crypto.randomUUID();
-  const order = await shopApi("/api/shop/checkout", { channel: shopChannel.value, requestId });
+  const order = await shopApi("/api/shop/checkout", { channel: shopChannel.value, requestId, paymentMethod: paymentSelection.value });
   requestId = undefined;
   cart = { items: [], total_cents: 0 };
   shopMessage.textContent = `Pedido ${order.id.slice(0, 8).toUpperCase()} registrado sem cobrança.`;
@@ -261,12 +319,14 @@ document.addEventListener("nhac:session", event => {
   const isCustomer = role === "CUSTOMER";
   shop.hidden = !isCustomer;
   document.querySelector("#shop-nav").hidden = !isCustomer;
-  document.querySelector("#stock-panel").hidden = role !== "MAIN";
-  document.querySelector("#stock-nav").hidden = role !== "MAIN";
-  document.querySelector("#prices-panel").hidden = role !== "MAIN";
-  document.querySelector("#prices-nav").hidden = role !== "MAIN";
-  document.querySelector("#wholesale-panel").hidden = role !== "MAIN";
-  document.querySelector("#wholesale-nav").hidden = role !== "MAIN";
+  orderSearch.value = "";
+  paymentSelection.value = "unspecified";
+  paymentChoice.hidden = true;
+  const legacyAdmin = role === "MAIN" && !window.nhacHosted;
+  document.querySelector("#catalog-panel").hidden = !legacyAdmin;
+  document.querySelector("#catalog-nav").hidden = !legacyAdmin;
+  document.querySelector("#wholesale-panel").hidden = !legacyAdmin;
+  document.querySelector("#wholesale-nav").hidden = !legacyAdmin;
   const note = document.querySelector("#demo-note");
   note.hidden = true;
   if (!role) return;
@@ -274,7 +334,7 @@ document.addEventListener("nhac:session", event => {
   withFeedback(async () => {
     if (isCustomer) await loadStore();
     else isDemo = (await shopApi("/api/shop/products")).demo;
-    note.hidden = !isDemo;
+    note.hidden = !isDemo || !isCustomer;
     await loadOrders(role);
   });
 });

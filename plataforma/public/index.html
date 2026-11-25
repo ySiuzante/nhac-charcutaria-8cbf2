@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="/styles.css">
   <script src="/client.js" defer></script>
   <script src="/shop.js" defer></script>
+  <script src="/dashboard.js" defer></script>
+  <link rel="stylesheet" href="/dashboard.css">
 </head>
 <body>
   <header class="topbar">
@@ -60,24 +62,53 @@
     </section>
     <section id="account-screen" class="workspace" hidden>
       <aside class="sidebar">
+        <a class="dash-brand" href="/" hidden><img src="/assets/simbolo.png" alt="" width="32" height="34"><span>Nhac!<small>Gestão da loja</small></span></a>
         <p class="sidebar-label" id="sidebar-label">Minha conta</p>
         <button id="account-menu" class="account-menu" type="button" aria-controls="account-navigation" aria-expanded="false">Menu <span class="menu-indicator" aria-hidden="true"></span></button>
         <nav id="account-navigation" aria-label="Área da conta">
-          <a href="#account-name" aria-current="location">Visão geral</a>
+          <a id="overview-nav" href="#account-name" aria-current="location"><span aria-hidden="true">▦</span> Visão geral</a>
           <a id="shop-nav" href="#store" hidden>Loja e carrinho</a>
-          <a href="#order-panel">Pedidos</a>
-          <a id="stock-nav" href="#stock-panel" hidden>Estoque</a>
-          <a id="prices-nav" href="#prices-panel" hidden>Preços</a>
-          <a id="wholesale-nav" href="#wholesale-panel" hidden>Atacado</a>
-          <a id="team-nav" href="#team" hidden>Contas</a>
+          <a id="orders-nav" href="#order-panel"><span aria-hidden="true">▤</span> Pedidos</a>
+          <a id="catalog-nav" href="#catalog-panel" hidden><span aria-hidden="true">▣</span> Catálogo</a>
+          <a id="wholesale-nav" href="#wholesale-panel" hidden><span aria-hidden="true">▰</span> Atacado</a>
+          <a id="team-nav" href="#team" hidden><span aria-hidden="true">◉</span> Clientes e equipe</a>
+          <a id="marketing-nav" href="#marketing-panel" hidden><span aria-hidden="true">✉</span> Remarketing</a>
+          <a id="preferences-nav" href="#preferences-panel" hidden>Preferências</a>
         </nav>
         <button id="logout-button" class="logout" type="button">Sair da conta</button>
       </aside>
       <div class="workspace-body">
-        <div class="workspace-top"><span>Visão geral</span><span class="identity" id="account-email"></span></div>
-        <div class="workspace-content"><h1>Olá, <span id="account-name">bem-vindo</span>.</h1>
+        <div class="workspace-top">
+          <span id="workspace-heading">Minha conta</span>
+          <div class="dash-top-actions"><span class="identity" id="account-email"></span><button id="dash-theme" type="button" class="dash-theme" hidden aria-pressed="false">Tema claro</button></div>
+        </div>
+        <div class="workspace-content">
+          <h1 id="account-greeting">Olá, <span id="account-name">bem-vindo</span>.</h1>
           <p id="demo-note" class="demo-note" hidden>Ambiente de testes. Preços e estoque são fictícios. O pedido é registrado sem cobrança.</p>
-          <article class="status-card"><div><span class="status-label">SUA CONTA</span><h2>Acesso ativo</h2><p id="account-role"></p></div><div class="status-mark" aria-hidden="true">N!</div></article>
+          <article id="account-status-card" class="status-card"><div><span class="status-label">SUA CONTA</span><h2>Acesso ativo</h2><p id="account-role"></p></div><div class="status-mark" aria-hidden="true">N!</div></article>
+          <section id="sales-dashboard" hidden aria-labelledby="sales-title">
+            <div class="dash-page-head">
+              <div><h1 id="sales-title">Visão geral</h1><p>Acompanhe os pedidos e os recebimentos da Nhac!.</p></div>
+              <label for="sales-period">Período <select id="sales-period"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></label>
+            </div>
+            <p id="metrics-status" class="dash-feedback" role="status"></p>
+            <div class="dash-metrics">
+              <article class="dash-metric"><span>Valor dos pedidos</span><strong id="metric-revenue">—</strong><small>Exclui pedidos cancelados</small></article>
+              <article class="dash-metric"><span>Pedidos registrados</span><strong id="metric-count">—</strong><small id="metric-pending">—</small></article>
+              <article class="dash-metric"><span>Ticket médio</span><strong id="metric-average">—</strong><small>Valor médio por pedido</small></article>
+              <article class="dash-metric dash-metric-paid"><span>Recebimentos registrados</span><strong id="metric-received">—</strong><small>Confirmados pela equipe</small></article>
+            </div>
+            <div class="dash-grid">
+              <article class="dash-card sales-chart">
+                <div class="dash-card-head"><div><h2>Vendas no período</h2><p>Valor dos pedidos por dia</p></div><span id="chart-period"></span></div>
+                <canvas id="sales-chart" aria-hidden="true"></canvas>
+                <p id="chart-empty" class="dash-empty" hidden>Nenhum pedido registrado neste período.</p>
+                <details id="chart-table-wrap" hidden><summary>Ver valores por dia</summary><div class="team-table"><table><thead><tr><th scope="col">Dia</th><th scope="col">Pedidos</th><th scope="col">Valor</th></tr></thead><tbody id="chart-table"></tbody></table></div></details>
+              </article>
+              <article class="dash-card"><h2>Meios de pagamento</h2><p>Recebimentos no período</p><ul class="dash-breakdown" id="payment-breakdown"></ul></article>
+              <article class="dash-card dash-channels"><h2>Canais de venda</h2><p>Pedidos de varejo e atacado</p><ul class="dash-breakdown" id="channel-breakdown"></ul></article>
+            </div>
+          </section>
           <section id="store" class="shop-section" hidden aria-labelledby="store-title">
             <div class="shop-heading"><h2 id="store-title">Loja Nhac!</h2><label for="shop-channel">Modalidade
               <select id="shop-channel"><option value="retail">Varejo</option><option value="wholesale" disabled>Atacado</option></select>
@@ -91,16 +122,47 @@
             <div class="shop-layout">
               <div id="product-list" class="product-list"></div>
               <aside class="cart"><h3>Meu carrinho</h3><ul id="cart-items"></ul><div class="cart-total"><strong>Total</strong><strong id="cart-total"></strong></div>
+                <label id="payment-choice" class="payment-choice" hidden for="order-payment">Forma de pagamento preferida
+                  <select id="order-payment"><option value="unspecified">Combinar depois</option><option value="pix">Pix</option><option value="card">Cartão</option><option value="cash">Dinheiro</option><option value="transfer">Transferência</option></select>
+                </label>
                 <button type="button" class="primary" id="checkout" disabled>Registrar pedido de teste</button>
               </aside>
             </div>
           </section>
           <p id="shop-message" class="shop-message" role="status"></p>
-          <section id="order-panel" class="shop-section" aria-labelledby="order-title"><h2 id="order-title">Pedidos</h2><div id="order-list"></div></section>
-          <section id="stock-panel" class="shop-section" hidden aria-labelledby="stock-title"><h2 id="stock-title">Estoque disponível</h2><ul id="stock-list" class="stock-list"></ul></section>
-          <section id="prices-panel" class="shop-section" hidden aria-labelledby="prices-title"><h2 id="prices-title">Preços dos produtos</h2><div id="price-list"></div></section>
+          <section id="order-panel" class="shop-section" aria-labelledby="order-title"><h2 id="order-title">Pedidos</h2><label id="order-search-label" hidden for="order-search">Buscar pedido ou cliente<input id="order-search" type="search" placeholder="Nome do cliente ou número do pedido"></label><div id="order-list"></div></section>
+          <section id="catalog-panel" class="shop-section" hidden aria-labelledby="catalog-title">
+            <h2 id="catalog-title">Catálogo</h2>
+            <div class="dash-card"><h3>Estoque disponível</h3><ul id="stock-list" class="stock-list"></ul></div>
+            <div class="dash-card"><h3>Preços dos produtos</h3><div id="price-list"></div></div>
+          </section>
           <section id="wholesale-panel" class="shop-section" hidden aria-labelledby="wholesale-title"><h2 id="wholesale-title">Contas de atacado</h2><div id="wholesale-list"></div></section>
           <section class="team" id="team" hidden aria-labelledby="team-title"><h2 id="team-title">Contas da plataforma</h2><p>Contas cadastradas e respectivos níveis de acesso.</p><div class="team-table"><table><thead><tr><th scope="col">Nome</th><th scope="col">E-mail</th><th scope="col">Acesso</th><th scope="col">Situação</th></tr></thead><tbody id="team-rows"></tbody></table></div><p id="team-message" role="status"></p></section>
+          <section id="marketing-panel" class="shop-section" hidden aria-labelledby="marketing-title">
+            <div class="dash-page-head"><div><h2 id="marketing-title">Remarketing</h2><p>Envie novidades da loja aos clientes que autorizaram o contato.</p></div><button id="marketing-refresh" type="button" class="shop-add">Atualizar contatos</button></div>
+            <div class="marketing-grid">
+              <article class="dash-card"><h3>Contatos autorizados</h3>
+                <label for="marketing-search">Buscar por nome ou e-mail</label><input id="marketing-search" type="search">
+                <p id="marketing-count" role="status"></p>
+                <div class="marketing-contacts"><ul id="marketing-contacts" class="dash-breakdown"></ul></div>
+              </article>
+              <article class="dash-card"><h3>Nova mensagem</h3>
+                <p id="marketing-recipient">Selecione um contato para começar.</p>
+                <form id="marketing-form" aria-describedby="marketing-feedback">
+                  <label for="marketing-template">Modelo</label>
+                  <select id="marketing-template"><option value="">Mensagem personalizada</option><option value="news">Novidades do catálogo</option><option value="returning">Convite para voltar à loja</option></select>
+                  <label for="marketing-subject">Assunto</label><input id="marketing-subject" required maxlength="120">
+                  <label for="marketing-message">Mensagem</label><textarea id="marketing-message" rows="7" required maxlength="4000"></textarea>
+                  <p id="marketing-feedback" class="dash-feedback" role="status"></p>
+                  <button id="marketing-send" type="submit" class="primary" disabled>Enviar e-mail</button>
+                </form>
+              </article>
+            </div>
+          </section>
+          <section id="preferences-panel" class="shop-section" hidden aria-labelledby="preferences-title">
+            <h2 id="preferences-title">Preferências de comunicação</h2>
+            <form id="marketing-consent-form"><label><input id="marketing-consent" type="checkbox"><span>Quero receber ofertas e novidades da Nhac! por e-mail.</span></label><button type="submit" class="shop-add">Salvar preferência</button><p id="marketing-consent-status" role="status"></p></form>
+          </section>
         </div>
       </div>
     </section>

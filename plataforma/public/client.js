@@ -55,7 +55,7 @@ function updateAccountNavigation() {
 
 accountNavigation.addEventListener("click", event => {
   const link = event.target.closest("a");
-  if (!link || !accountMenuIsOpen() || accountMenu.offsetWidth === 0) return;
+  if (accountScreen.classList.contains("admin-workspace") || !link || !accountMenuIsOpen() || accountMenu.offsetWidth === 0) return;
   const target = document.getElementById(link.hash.slice(1));
   target?.setAttribute("tabindex", "-1");
   target?.focus({ preventScroll: true });

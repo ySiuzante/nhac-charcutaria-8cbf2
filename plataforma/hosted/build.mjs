@@ -9,7 +9,7 @@ await mkdir(platform, { recursive: true });
 for (const file of ['app.js', 'estilo.css', 'assets']) {
   await cp(resolve(workspace, file), resolve(output, file), { recursive: true });
 }
-for (const file of ['client.js', 'shop.js', 'styles.css']) {
+for (const file of ['client.js', 'shop.js', 'styles.css', 'dashboard.js', 'dashboard.css']) {
   await cp(resolve(publicDir, file), resolve(platform, file));
 }
 for (const file of ['config.js', 'supabase-client.js']) {
@@ -24,6 +24,8 @@ const portal = (await readFile(resolve(publicDir, 'index.html'), 'utf8'))
     '  <script src="/plataforma/client.js" defer></script>',
   ].join('\n'))
   .replace('src="/shop.js"', 'src="/plataforma/shop.js"')
+  .replace('src="/dashboard.js"', 'src="/plataforma/dashboard.js"')
+  .replace('href="/dashboard.css"', 'href="/plataforma/dashboard.css"')
   .replace('href="https://ysiuzante.github.io/nhac-charcutaria/"', 'href="/"')
   .replace('Os acessos são disponibilizados pela equipe responsável pela Nhac!.', 'Use o mesmo acesso para a loja e o painel administrativo.');
 await writeFile(resolve(platform, 'index.html'), portal);

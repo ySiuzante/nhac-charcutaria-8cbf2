@@ -16,6 +16,11 @@ function checked(response) {
 const apiOperations = {
   "GET /api/admin/users": "admin_users",
   "GET /api/admin/orders": "admin_orders",
+  "POST /api/admin/payment": "admin_order_payment",
+  "GET /api/admin/metrics": "admin_metrics",
+  "GET /api/admin/marketing": "admin_marketing",
+  "GET /api/shop/marketing": "shop_marketing",
+  "POST /api/shop/marketing": "shop_marketing",
   "POST /api/admin/orders": "admin_order_status",
   "POST /api/admin/wholesale": "admin_wholesale",
   "POST /api/admin/prices": "admin_prices",
@@ -67,7 +72,7 @@ window.nhacHosted = {
       }
       if (url.pathname === "/api/auth/me") return await sessionProfile();
       if (url.pathname === "/api/auth/logout") {
-        await this.signOut();
+        await window.nhacHosted.signOut();
         return result(200, { ok: true });
       }
       const operation = apiOperations[`${method} ${url.pathname}`];
@@ -84,6 +89,18 @@ window.nhacHosted = {
     } catch (error) {
       return result(error.status === 429 ? 429 : 401, { error: authError(error) });
     }
+  },
+  async sendMarketing(payload) {
+    const { session } = checked(await requireAuthClient().auth.getSession());
+    if (!session) throw new Error("Entre novamente na sua conta.");
+    const response = await fetch("/.netlify/functions/marketing", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Não foi possível verificar o envio. Tente novamente.");
+    return data;
   },
   async register({ name, email, password }) {
     if (name.trim().length < 2 || new TextEncoder().encode(password).length > 72) {
