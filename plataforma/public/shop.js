@@ -262,9 +262,11 @@ document.addEventListener("nhac:session", event => {
   shop.hidden = !isCustomer;
   document.querySelector("#shop-nav").hidden = !isCustomer;
   document.querySelector("#stock-panel").hidden = role !== "MAIN";
+  document.querySelector("#stock-nav").hidden = role !== "MAIN";
   document.querySelector("#prices-panel").hidden = role !== "MAIN";
   document.querySelector("#prices-nav").hidden = role !== "MAIN";
   document.querySelector("#wholesale-panel").hidden = role !== "MAIN";
+  document.querySelector("#wholesale-nav").hidden = role !== "MAIN";
   const note = document.querySelector("#demo-note");
   note.hidden = true;
   if (!role) return;

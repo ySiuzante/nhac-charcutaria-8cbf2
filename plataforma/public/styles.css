@@ -8,7 +8,19 @@ button,a{touch-action:manipulation}
 :focus-visible{outline:3px solid #1752a0;outline-offset:3px}
 .topbar{height:76px;padding:0 clamp(1.25rem,5vw,5rem);display:flex;align-items:center;justify-content:space-between;background:var(--aqua);border-bottom:2px solid var(--berry)}
 .brand{font:2.35rem/1 Archivo,"Arial Black",sans-serif;letter-spacing:-.09em;color:var(--berry);text-decoration:none;font-style:italic}.brand span{color:var(--berry)}
-.site-link{color:var(--berry);font-weight:700;text-decoration:none}
+.site-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  min-height: 2.75rem;
+  padding: .45rem .85rem;
+  border: 1px solid currentColor;
+  border-radius: 2rem;
+  color: var(--berry);
+  font-weight: 700;
+  text-decoration: none;
+}
+.site-link:hover { background: var(--berry); color: white; }
 .entry{min-height:calc(100vh - 76px);display:grid;grid-template-columns:1.1fr .9fr}
 .intro{position:relative;overflow:hidden;background:var(--aqua);padding:clamp(3rem,7vw,7rem) clamp(1.5rem,7vw,7rem);min-height:650px}
 .eyebrow{font-size:.78rem;font-weight:800;letter-spacing:.11em;color:var(--berry);margin:0 0 1rem}
@@ -37,9 +49,29 @@ input:focus{border-color:var(--berry)}
 .workspace-content{padding:clamp(2rem,5vw,5rem);max-width:1100px}.workspace-content h1{font-size:clamp(3rem,5vw,5rem);color:var(--berry);margin:.5rem 0}.workspace-content>p:not(.eyebrow){color:#66595b}
 .status-card{margin-top:2.5rem;border:1px solid #e6d9cb;background:white;border-radius:1rem;padding:2rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;max-width:680px}.status-card h2{font-size:2rem;margin:.5rem 0;color:var(--berry)}.status-card p{margin:0}.status-label{font-size:.75rem;font-weight:800;letter-spacing:.1em;color:#77676b}.status-mark{background:var(--aqua);color:var(--berry);width:5.5rem;aspect-ratio:1;display:grid;place-items:center;border-radius:50%;font:2rem Archivo,sans-serif}
 .team{margin-top:3rem}.team h2{color:var(--berry);font-size:2rem;margin-bottom:.5rem}.team>p{color:#66595b}.team-table{overflow-x:auto;background:white;border:1px solid #e6d9cb;border-radius:.8rem}.team table{border-collapse:collapse;width:100%;text-align:left}.team th,.team td{padding:.9rem 1rem;border-bottom:1px solid #eee6dc;white-space:nowrap}.team th{font-size:.85rem;color:#66595b}.team tr:last-child td{border-bottom:0}
-.sidebar nav { display: grid; gap: .4rem; }
-.sidebar nav a { color: white; padding: .6rem .75rem; border-radius: .4rem; text-decoration: none; }
+.sidebar-label {
+  margin: 0;
+  padding: .4rem .65rem .85rem;
+  border-bottom: 1px solid #ffffff40;
+  color: #ffdc85;
+  font-weight: 800;
+}
+.account-menu { display: none; }
+.sidebar nav { display: grid; gap: .3rem; }
+.sidebar nav a {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: .55rem .7rem;
+  border-radius: .5rem;
+  color: white;
+  font-weight: 650;
+  text-decoration: none;
+}
 .sidebar nav a:hover { background: #ffffff25; }
+.sidebar nav [aria-current="location"] { background: #ffdc85; color: var(--ink); }
+.sidebar :focus-visible { outline-color: #ffdc85; }
+.logout:hover { background: #ffffff25; }
 .demo-note { padding: .8rem 1rem; background: #fff0c4; border-left: 4px solid #a45b11; border-radius: .3rem; }
 .shop-section { margin: 2.5rem 0; }
 .shop-section h2 { color: var(--berry); margin: .5rem 0 1rem; font-size: clamp(1.8rem, 4vw, 2.6rem); }
@@ -73,6 +105,31 @@ input:focus{border-color:var(--berry)}
 .wholesale-form { align-items: start; margin: .6rem 0 1.25rem; }
 .wholesale-form input { width: min(100%, 28rem); }
 .auth-switch { margin-top: .8rem; align-self: flex-start; }
+.register-prompt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .15rem .65rem;
+  margin-top: 1.3rem;
+  padding-top: .8rem;
+  border-top: 1px solid #d9cfc4;
+  color: #65555a;
+  font-size: .95rem;
+}
+.register-action {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  min-height: 2.75rem;
+  padding: .2rem .65rem;
+  border: 0;
+  border-radius: .45rem;
+  background: #f1e6da;
+  color: var(--berry);
+  font-weight: 800;
+  cursor: pointer;
+}
+.register-action:hover { background: var(--berry); color: white; }
 .price-form { display:grid; grid-template-columns: minmax(9rem, 1fr) repeat(2,minmax(6rem, .5fr)) auto; gap:.75rem; align-items:end; }
 .price-form input { display:block; margin:.35rem 0 0; width:100%; }
 .price-form label { margin:0; }
@@ -84,8 +141,48 @@ input:focus{border-color:var(--berry)}
 }
 @media (max-width: 950px) { .shop-layout { grid-template-columns: 1fr; } }
 @media (max-width: 760px) {
-  .workspace .sidebar { flex-wrap: wrap; }
-  .sidebar nav { display: flex; order: 3; flex-basis: 100%; flex-wrap: wrap; }
+
+  .workspace .sidebar { flex-wrap: wrap; gap: .65rem; }
+  .sidebar-label { padding: .2rem 0; border: 0; flex: 1 0 100%; }
+  .account-menu {
+    display: inline-flex;
+    align-items: center;
+    gap: .65rem;
+    min-height: 2.75rem;
+    padding: .45rem .8rem;
+    border: 1px solid #ffdc85;
+    border-radius: .55rem;
+    background: #ffdc85;
+    color: var(--ink);
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .menu-indicator {
+    width: .45rem;
+    height: .45rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-.12rem) rotate(45deg);
+  }
+  .account-menu[aria-expanded="true"] .menu-indicator { transform: translateY(.08rem) rotate(225deg); }
+  .account-menu[aria-expanded="false"] + nav { display: none; }
+  .sidebar nav {
+    order: 3;
+    flex-basis: 100%;
+    padding: .45rem;
+    border: 1px solid #ffffff40;
+    border-radius: .6rem;
+    background: #39051842;
+  }
 }
 @media(max-width:760px){.entry{grid-template-columns:1fr}.intro{min-height:320px;padding:2.5rem 1.5rem}.intro h1{font-size:clamp(3.1rem,11vw,4.7rem)}.intro-text{max-width:23ch}.illustration{right:3%;width:38%;height:55%;bottom:-6%}.panel{padding:2.5rem 1.5rem}.workspace{grid-template-columns:1fr}.sidebar{flex-direction:row;align-items:center;padding:1rem}.sidebar .side-caption,.side-current{display:none}.logout{margin:0 0 0 auto}.workspace-top{padding:1rem;flex-wrap:wrap}.workspace-content{padding:2rem 1.25rem}}
 @media(prefers-reduced-motion:no-preference){.primary{transition:transform .2s,background .2s}.primary:hover{transform:translateY(-2px)}}
+
+@media (max-width: 760px) and (prefers-reduced-motion: no-preference) {
+  .menu-indicator { transition: transform .18s ease; }
+  .account-menu[aria-expanded="true"] + nav { animation: account-menu-in .2s ease-out; }
+  @keyframes account-menu-in {
+    from { opacity: 0; transform: translateY(-.35rem); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}

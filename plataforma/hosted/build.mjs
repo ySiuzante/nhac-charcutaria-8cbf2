@@ -32,4 +32,4 @@ const html = await readFile(resolve(workspace, 'index.html'), 'utf8');
 const navigationEnd = '</nav>';
 if (!html.includes(navigationEnd)) throw new Error('Menu institucional não encontrado.');
 await writeFile(resolve(output, 'index.html'), html.replace(navigationEnd,
-  '<a class="nav-biz" href="/plataforma/">Minha conta</a>' + navigationEnd));
+  '<a class="nav-biz nav-account" href="/plataforma/">Minha conta <span aria-hidden="true">↗</span></a>' + navigationEnd));

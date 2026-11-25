@@ -10,7 +10,10 @@
   <script src="/shop.js" defer></script>
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="/">Nhac<span>!</span></a><a class="site-link" href="https://ysiuzante.github.io/nhac-charcutaria/">Conheça a marca</a></header>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Nhac!, página inicial">Nhac<span>!</span></a>
+    <nav aria-label="Navegação principal"><a class="site-link" href="https://ysiuzante.github.io/nhac-charcutaria/">Voltar ao site <span aria-hidden="true">↗</span></a></nav>
+  </header>
   <main>
     <section id="login-screen" class="entry">
       <div class="intro">
@@ -29,14 +32,17 @@
           <p id="login-message" class="message" role="alert"></p>
           <button class="primary" id="login-button" type="submit">Entrar</button>
         </form>
-        <button id="register-toggle" class="text-button auth-switch" type="button" hidden>Criar conta de cliente</button>
+        <div id="register-prompt" class="register-prompt" hidden>
+          <span>Ainda não tem conta?</span>
+          <button id="register-toggle" class="register-action" type="button" aria-controls="register-form">Registre-se <span aria-hidden="true">→</span></button>
+        </div>
         <form id="register-form" hidden>
-          <h3>Criar conta de cliente</h3>
+          <h3>Crie sua conta</h3>
           <label for="register-name">Nome completo</label><input id="register-name" name="name" autocomplete="name" required minlength="2" maxlength="120">
           <label for="register-email">E-mail</label><input id="register-email" name="email" type="email" autocomplete="username" required maxlength="254">
           <label for="register-password">Senha</label><input id="register-password" name="password" type="password" autocomplete="new-password" required minlength="12" maxlength="72">
           <p id="register-message" role="status"></p>
-          <button class="primary" type="submit">Cadastrar</button>
+          <button class="primary" type="submit">Concluir cadastro</button>
           <button id="register-back" class="text-button auth-switch" type="button">Voltar ao login</button>
         </form>
         <form id="mfa-form" hidden>
@@ -53,7 +59,20 @@
       </div>
     </section>
     <section id="account-screen" class="workspace" hidden>
-      <aside class="sidebar"><div class="brand">Nhac<span>!</span></div><nav aria-label="Área da conta"><a href="#account-name">Visão geral</a><a id="shop-nav" href="#store" hidden>Loja</a><a href="#order-panel">Pedidos</a><a id="prices-nav" href="#prices-panel" hidden>Preços</a><a id="team-nav" href="#team" hidden>Contas</a></nav><button id="logout-button" class="logout" type="button">Sair da conta</button></aside>
+      <aside class="sidebar">
+        <p class="sidebar-label" id="sidebar-label">Minha conta</p>
+        <button id="account-menu" class="account-menu" type="button" aria-controls="account-navigation" aria-expanded="false">Menu <span class="menu-indicator" aria-hidden="true"></span></button>
+        <nav id="account-navigation" aria-label="Área da conta">
+          <a href="#account-name" aria-current="location">Visão geral</a>
+          <a id="shop-nav" href="#store" hidden>Loja e carrinho</a>
+          <a href="#order-panel">Pedidos</a>
+          <a id="stock-nav" href="#stock-panel" hidden>Estoque</a>
+          <a id="prices-nav" href="#prices-panel" hidden>Preços</a>
+          <a id="wholesale-nav" href="#wholesale-panel" hidden>Atacado</a>
+          <a id="team-nav" href="#team" hidden>Contas</a>
+        </nav>
+        <button id="logout-button" class="logout" type="button">Sair da conta</button>
+      </aside>
       <div class="workspace-body">
         <div class="workspace-top"><span>Visão geral</span><span class="identity" id="account-email"></span></div>
         <div class="workspace-content"><h1>Olá, <span id="account-name">bem-vindo</span>.</h1>

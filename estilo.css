@@ -243,3 +243,22 @@ footer {background:var(--cereja);color:var(--papel);padding-block:1.4rem}
   nav a:not(.nav-biz) { text-decoration:none; background:linear-gradient(currentColor,currentColor) left bottom / 0 2px no-repeat; transition:background-size .25s ease; }
   nav a:not(.nav-biz):hover, nav a:not(.nav-biz):focus-visible { background-size:100% 2px; }
 }
+
+.nav .mobile-menu nav .nav-account {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .55rem;
+  padding: .5rem .9rem;
+  background: var(--cereja);
+  color: white;
+  border-radius: 2rem;
+}
+.nav .mobile-menu nav .nav-account:hover,
+.nav .mobile-menu nav .nav-account:focus-visible { background: #541027; color: white; }
+@media (max-width: 680px) {
+  .nav .mobile-menu nav .nav-biz:not(.nav-account) { background: transparent; color: var(--cereja); margin-top: 0; }
+  .nav .mobile-menu nav .nav-biz:not(.nav-account):hover,
+  .nav .mobile-menu nav .nav-biz:not(.nav-account):focus-visible { background: #f6e7ce; }
+  .nav .mobile-menu nav .nav-account { border-radius: .6rem; }
+}

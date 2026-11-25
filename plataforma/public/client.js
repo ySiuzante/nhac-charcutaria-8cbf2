@@ -9,6 +9,9 @@ let csrfToken = "";
 const request = window.nhacHosted?.request ?? window.fetch.bind(window);
 const registerForm = document.querySelector("#register-form");
 const registerToggle = document.querySelector("#register-toggle");
+const registerPrompt = document.querySelector("#register-prompt");
+const accountMenu = document.querySelector("#account-menu");
+const accountNavigation = document.querySelector("#account-navigation");
 const mfaForm = document.querySelector("#mfa-form");
 const mfaMessage = document.querySelector("#mfa-message");
 const mfaEnroll = document.querySelector("#mfa-enroll");
@@ -18,7 +21,7 @@ function switchAuth(form) {
   loginForm.hidden = form !== loginForm;
   registerForm.hidden = form !== registerForm;
   mfaForm.hidden = form !== mfaForm;
-  registerToggle.hidden = !window.nhacHosted || form !== loginForm;
+  registerPrompt.hidden = !window.nhacHosted || form !== loginForm;
 }
 
 if (window.nhacHosted) {
@@ -30,7 +33,42 @@ registerToggle.addEventListener("click", () => {
   switchAuth(registerForm);
   document.querySelector("#register-name").focus();
 });
-document.querySelector("#register-back").addEventListener("click", () => switchAuth(loginForm));
+document.querySelector("#register-back").addEventListener("click", () => {
+  switchAuth(loginForm);
+  registerToggle.focus();
+});
+
+function accountMenuIsOpen() {
+  return accountMenu.getAttribute("aria-expanded") === "true";
+}
+
+accountMenu.addEventListener("click", () => {
+  accountMenu.setAttribute("aria-expanded", String(!accountMenuIsOpen()));
+});
+
+function updateAccountNavigation() {
+  const links = Array.from(accountNavigation.querySelectorAll("a:not([hidden])"));
+  const active = links.find(link => link.hash === window.location.hash) ?? links[0];
+  accountNavigation.querySelector("[aria-current]")?.removeAttribute("aria-current");
+  active?.setAttribute("aria-current", "location");
+}
+
+accountNavigation.addEventListener("click", event => {
+  const link = event.target.closest("a");
+  if (!link || !accountMenuIsOpen() || accountMenu.offsetWidth === 0) return;
+  const target = document.getElementById(link.hash.slice(1));
+  target?.setAttribute("tabindex", "-1");
+  target?.focus({ preventScroll: true });
+  accountMenu.setAttribute("aria-expanded", "false");
+});
+
+document.querySelector(".sidebar").addEventListener("keydown", event => {
+  if (event.key !== "Escape" || !accountMenuIsOpen() || accountMenu.offsetWidth === 0) return;
+  accountMenu.setAttribute("aria-expanded", "false");
+  accountMenu.focus();
+});
+
+window.addEventListener("hashchange", updateAccountNavigation);
 registerForm.addEventListener("submit", async event => {
   event.preventDefault();
   const button = registerForm.querySelector('button[type="submit"]');
@@ -90,6 +128,8 @@ document.querySelector("#mfa-back").addEventListener("click", async () => {
 
 function showAccount(user) {
   switchAuth(loginForm);
+  accountMenu.setAttribute("aria-expanded", "false");
+  document.querySelector("#sidebar-label").textContent = user.role === "MAIN" ? "Painel de gestão" : "Minha conta";
   document.querySelector("#account-email").textContent = user.email;
   document.querySelector("#account-name").textContent = user.name || user.email.split("@")[0];
   document.querySelector("#account-role").textContent = user.role === "MAIN" ? "Administração principal" : "Conta ativa";
@@ -100,6 +140,7 @@ function showAccount(user) {
   document.querySelector("#team-nav").hidden = team.hidden;
   if (user.role === "MAIN") loadAccounts();
   document.dispatchEvent(new CustomEvent("nhac:session", { detail: user.role }));
+  updateAccountNavigation();
 }
 
 async function loadAccounts() {
