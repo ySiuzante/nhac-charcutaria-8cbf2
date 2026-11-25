@@ -79,7 +79,7 @@
       </aside>
       <div class="workspace-body">
         <div class="workspace-top">
-          <span id="workspace-heading">Minha conta</span>
+          <div class="dash-location"><span class="dash-location-label" aria-hidden="true">Gestão</span><span id="workspace-heading">Minha conta</span></div>
           <div class="dash-top-actions"><span class="identity" id="account-email"></span><button id="dash-theme" type="button" class="dash-theme" hidden aria-pressed="false">Tema claro</button></div>
         </div>
         <div class="workspace-content">
@@ -88,25 +88,45 @@
           <article id="account-status-card" class="status-card"><div><span class="status-label">SUA CONTA</span><h2>Acesso ativo</h2><p id="account-role"></p></div><div class="status-mark" aria-hidden="true">N!</div></article>
           <section id="sales-dashboard" hidden aria-labelledby="sales-title">
             <div class="dash-page-head">
-              <div><h1 id="sales-title">Visão geral</h1><p>Acompanhe os pedidos e os recebimentos da Nhac!.</p></div>
+              <div><h1 id="sales-title">Visão geral</h1><p>Pedidos, recebimentos e desempenho da loja.</p></div>
               <label for="sales-period">Período <select id="sales-period"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></label>
             </div>
             <p id="metrics-status" class="dash-feedback" role="status"></p>
             <div class="dash-metrics">
-              <article class="dash-metric"><span>Valor dos pedidos</span><strong id="metric-revenue">—</strong><small>Exclui pedidos cancelados</small></article>
+              <article class="dash-metric dash-metric-revenue"><span>Valor dos pedidos</span><strong id="metric-revenue">—</strong><small>Exclui pedidos cancelados</small></article>
               <article class="dash-metric"><span>Pedidos registrados</span><strong id="metric-count">—</strong><small id="metric-pending">—</small></article>
               <article class="dash-metric"><span>Ticket médio</span><strong id="metric-average">—</strong><small>Valor médio por pedido</small></article>
               <article class="dash-metric dash-metric-paid"><span>Recebimentos registrados</span><strong id="metric-received">—</strong><small>Confirmados pela equipe</small></article>
             </div>
             <div class="dash-grid">
               <article class="dash-card sales-chart">
-                <div class="dash-card-head"><div><h2>Vendas no período</h2><p>Valor dos pedidos por dia</p></div><span id="chart-period"></span></div>
+                <div class="dash-card-head">
+                  <div><h2>Vendas no período</h2><p id="chart-description">Valor dos pedidos por dia</p></div>
+                  <div class="dash-chart-control">
+                    <label for="sales-chart-mode">Mostrar</label>
+                    <select id="sales-chart-mode" disabled>
+                      <option value="revenue">Valor dos pedidos</option>
+                      <option value="orders">Número de pedidos</option>
+                    </select>
+                  </div>
+                </div>
+                <p id="chart-period" class="dash-chart-period"></p>
                 <canvas id="sales-chart" aria-hidden="true"></canvas>
+                <div id="chart-inspector" class="dash-chart-inspector" hidden>
+                  <div class="dash-chart-reading">
+                    <strong id="chart-day"></strong><span id="chart-value"></span>
+                  </div>
+                  <span id="chart-announcement" class="dash-visually-hidden" role="status"></span>
+                  <div class="dash-chart-pages" aria-label="Selecionar dia no gráfico" role="group">
+                    <button id="chart-prev" type="button" aria-label="Dia anterior">‹</button>
+                    <button id="chart-next" type="button" aria-label="Dia seguinte">›</button>
+                  </div>
+                </div>
                 <p id="chart-empty" class="dash-empty" hidden>Nenhum pedido registrado neste período.</p>
                 <details id="chart-table-wrap" hidden><summary>Ver valores por dia</summary><div class="team-table"><table><thead><tr><th scope="col">Dia</th><th scope="col">Pedidos</th><th scope="col">Valor</th></tr></thead><tbody id="chart-table"></tbody></table></div></details>
               </article>
-              <article class="dash-card"><h2>Meios de pagamento</h2><p>Recebimentos no período</p><ul class="dash-breakdown" id="payment-breakdown"></ul></article>
-              <article class="dash-card dash-channels"><h2>Canais de venda</h2><p>Pedidos de varejo e atacado</p><ul class="dash-breakdown" id="channel-breakdown"></ul></article>
+              <article class="dash-card dash-payments"><h2>Meios de pagamento</h2><p>Recebimentos no período</p><ul class="dash-breakdown" id="payment-breakdown"></ul></article>
+              <article class="dash-card dash-channels"><h2>Canais de venda</h2><p>Pedidos de varejo e atacado</p><ul class="dash-breakdown" id="channel-breakdown"></ul><a class="dash-section-link" href="#order-panel">Ver pedidos</a></article>
             </div>
           </section>
           <section id="store" class="shop-section" hidden aria-labelledby="store-title">
@@ -150,7 +170,7 @@
                 <p id="marketing-recipient">Selecione um contato para começar.</p>
                 <form id="marketing-form" aria-describedby="marketing-feedback">
                   <label for="marketing-template">Modelo</label>
-                  <select id="marketing-template"><option value="">Mensagem personalizada</option><option value="news">Novidades do catálogo</option><option value="returning">Convite para voltar à loja</option></select>
+                  <select id="marketing-template"><option value="">Mensagem personalizada</option><option value="news">Novidades do catálogo</option><option value="returning">Tábua para o fim de semana</option></select>
                   <label for="marketing-subject">Assunto</label><input id="marketing-subject" required maxlength="120">
                   <label for="marketing-message">Mensagem</label><textarea id="marketing-message" rows="7" required maxlength="4000"></textarea>
                   <p id="marketing-feedback" class="dash-feedback" role="status"></p>

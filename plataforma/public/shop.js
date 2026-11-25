@@ -16,6 +16,11 @@ const orderSearch = document.querySelector("#order-search");
 const paymentChoice = document.querySelector("#payment-choice");
 const paymentSelection = document.querySelector("#order-payment");
 const cutLabels = { original: "Apresentação padrão", whole: "Inteiro", sliced: "Fatiado", diced: "Em cubos" };
+const cutUsage = {
+  whole: "Corte na espessura que preferir.",
+  sliced: "Prático para tábuas e sanduíches.",
+  diced: "Para dourar e incorporar às receitas."
+};
 const paymentLabels = { unspecified: "A combinar", pix: "Pix", card: "Cartão", cash: "Dinheiro", transfer: "Transferência" };
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const statuses = { received: "Recebido", preparing: "Em preparo", ready: "Pronto", cancelled: "Cancelado" };
@@ -82,7 +87,7 @@ function renderCatalog() {
     image.loading = "lazy";
     const copy = element("div");
     const price = money.format((wholesale ? product.wholesale_cents : product.retail_cents) / 100);
-    const button = element("button", product.stock < minimum ? "Indisponível" : `Adicionar ${minimum}`, "shop-add");
+    const button = element("button", product.stock < minimum ? "Indisponível" : wholesale ? `Adicionar ${minimum} unidades` : "Adicionar ao carrinho", "shop-add");
     button.type = "button";
     button.disabled = product.stock < minimum;
     button.setAttribute("aria-label", `Adicionar ${minimum} de ${product.name}`);
@@ -100,8 +105,16 @@ function renderCatalog() {
     }));
     copy.append(element("small", `${product.category} · ${product.package}`), element("h3", product.name),
       element("p", product.description), element("strong", price));
-    if (cuts.length > 1) copy.append(cutLabel);
-    else if (cuts[0] !== "original") copy.append(element("p", cutLabels[cuts[0]], "product-cut-note"));
+    if (wholesale) copy.append(element("p", `Por embalagem · Mínimo de ${minimum} unidades`, "product-cut-note"));
+    if (cuts.length > 1) {
+      const hint = element("p", cutUsage[cut.value], "product-cut-note");
+      hint.id = "cut-hint-" + product.id;
+      cut.setAttribute("aria-describedby", hint.id);
+      cut.addEventListener("change", () => { hint.textContent = cutUsage[cut.value] || ""; });
+      copy.append(cutLabel, hint);
+    } else if (cuts[0] !== "original") {
+      copy.append(element("p", cutLabels[cuts[0]] + " · " + cutUsage[cuts[0]], "product-cut-note"));
+    }
     copy.append(button);
     card.append(image, copy);
     productList.append(card);
