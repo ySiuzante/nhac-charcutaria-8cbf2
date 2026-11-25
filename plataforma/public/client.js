@@ -6,6 +6,8 @@ const loginForm = document.querySelector("#login-form");
 const message = document.querySelector("#login-message");
 const loginButton = document.querySelector("#login-button");
 let csrfToken = "";
+let accountPermissions = new Set();
+const canUseAdminArea = (role, permission) => role === "MAIN" || (role === "STAFF" && accountPermissions.has(permission));
 const request = window.nhacHosted?.request ?? window.fetch.bind(window);
 const registerForm = document.querySelector("#register-form");
 const registerToggle = document.querySelector("#register-toggle");
@@ -127,18 +129,20 @@ document.querySelector("#mfa-back").addEventListener("click", async () => {
 });
 
 function showAccount(user) {
+  accountPermissions = new Set(user.permissions || []);
+  const staff = ["MAIN", "STAFF"].includes(user.role);
   switchAuth(loginForm);
   accountMenu.setAttribute("aria-expanded", "false");
-  document.querySelector("#sidebar-label").textContent = user.role === "MAIN" ? "Painel de gestão" : "Minha conta";
+  document.querySelector("#sidebar-label").textContent = staff ? "Painel de gestão" : "Minha conta";
   document.querySelector("#account-email").textContent = user.email;
   document.querySelector("#account-name").textContent = user.name || user.email.split("@")[0];
-  document.querySelector("#account-role").textContent = user.role === "MAIN" ? "Administração principal" : "Conta ativa";
+  document.querySelector("#account-role").textContent = staff ? user.roleName || "Administração principal" : "Conta ativa";
   loginScreen.hidden = true;
   accountScreen.hidden = false;
   const team = document.querySelector("#team");
-  team.hidden = user.role !== "MAIN";
+  team.hidden = !canUseAdminArea(user.role, "clients");
   document.querySelector("#team-nav").hidden = team.hidden;
-  if (user.role === "MAIN") loadAccounts();
+  if (!team.hidden) loadAccounts();
   document.dispatchEvent(new CustomEvent("nhac:session", { detail: user.role }));
   updateAccountNavigation();
 }
@@ -154,7 +158,7 @@ async function loadAccounts() {
     const data = await response.json();
     for (const account of data.users) {
       const row = document.createElement("tr");
-      for (const value of [account.name, account.email, account.role === "MAIN" ? "MAIN" : "Cliente", account.active ? "Ativa" : "Inativa"]) {
+      for (const value of [account.name, account.email, account.role === "MAIN" ? "MAIN" : account.roleName || "Cliente", account.active ? "Ativa" : "Inativa"]) {
         const cell = document.createElement("td");
         cell.textContent = value;
         row.append(cell);
@@ -217,6 +221,7 @@ document.querySelector("#logout-button").addEventListener("click", async () => {
     const response = await request("/api/auth/logout", { method: "POST", credentials: "same-origin", headers: { "X-CSRF-Token": csrfToken } });
     if (!response.ok) throw new Error("logout");
     csrfToken = "";
+    accountPermissions.clear();
     document.dispatchEvent(new CustomEvent("nhac:session", { detail: null }));
     document.querySelector("#team").hidden = true;
     document.querySelector("#team-rows").replaceChildren();

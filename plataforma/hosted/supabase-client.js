@@ -16,6 +16,11 @@ function checked(response) {
 const apiOperations = {
   "GET /api/admin/users": "admin_users",
   "GET /api/admin/orders": "admin_orders",
+  "GET /api/admin/me": "admin_my_account",
+  "POST /api/admin/me": "admin_my_account_save",
+  "GET /api/admin/access": "admin_access",
+  "POST /api/admin/access/levels": "admin_access_level",
+  "POST /api/admin/access/assign": "admin_access_assign",
   "POST /api/admin/payment": "admin_order_payment",
   "GET /api/admin/metrics": "admin_metrics",
   "GET /api/admin/marketing": "admin_marketing",
@@ -43,7 +48,7 @@ async function sessionProfile() {
   const { session } = checked(await auth.auth.getSession());
   if (!session) return result(401, { error: "Entre na sua conta." });
   const profile = checked(await auth.rpc("nhac_api", { operation: "profile" }));
-  if (profile.user.role === "MAIN") {
+  if (["MAIN", "STAFF"].includes(profile.user.role)) {
     const { currentLevel } = checked(await auth.auth.mfa.getAuthenticatorAssuranceLevel());
     if (currentLevel !== "aal2") return result(428, { error: "Confirme seu autenticador." });
   }

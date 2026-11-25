@@ -9,6 +9,7 @@
   <script src="/client.js" defer></script>
   <script src="/shop.js" defer></script>
   <script src="/dashboard.js" defer></script>
+  <script src="/staff.js" defer></script>
   <link rel="stylesheet" href="/dashboard.css">
 </head>
 <body>
@@ -73,6 +74,8 @@
           <a id="wholesale-nav" href="#wholesale-panel" hidden><span aria-hidden="true">▰</span> Atacado</a>
           <a id="team-nav" href="#team" hidden><span aria-hidden="true">◉</span> Clientes e equipe</a>
           <a id="marketing-nav" href="#marketing-panel" hidden><span aria-hidden="true">✉</span> Remarketing</a>
+          <a id="access-nav" href="#access-panel" hidden><span aria-hidden="true">⚿</span> Acessos</a>
+          <a id="my-account-nav" href="#my-account-panel" hidden><span aria-hidden="true">◉</span> Minha conta</a>
           <a id="preferences-nav" href="#preferences-panel" hidden>Preferências</a>
         </nav>
         <button id="logout-button" class="logout" type="button">Sair da conta</button>
@@ -178,6 +181,57 @@
                 </form>
               </article>
             </div>
+          </section>
+          <section id="my-account-panel" class="shop-section" hidden aria-labelledby="my-account-title">
+            <div class="dash-page-head"><div><h2 id="my-account-title">Minha conta</h2><p>Confira seus dados e atualize sua foto ou telefone.</p></div></div>
+            <div class="dash-card staff-profile">
+              <div class="staff-avatar-editor">
+                <div class="staff-avatar-frame"><img id="staff-avatar" alt="Foto de perfil" hidden><span id="staff-initials" aria-hidden="true"></span></div>
+                <label class="staff-file-label"><span>Escolher foto</span><input type="file" id="staff-photo" accept="image/jpeg,image/png,image/webp" form="staff-profile-form"></label>
+                <button id="staff-remove-photo" type="button" class="shop-add" hidden>Remover foto</button>
+              </div>
+              <form id="staff-profile-form" class="staff-editor">
+                <label for="staff-name">Nome</label><input id="staff-name" maxlength="120" minlength="2" required autocomplete="name">
+                <label for="staff-phone">Telefone</label><input id="staff-phone" type="tel" maxlength="26" autocomplete="tel" placeholder="(00) 00000-0000">
+                <dl class="staff-account-data"><div><dt>Cargo / nível de acesso</dt><dd id="staff-role">—</dd></div><div><dt>E-mail de acesso</dt><dd id="staff-email">—</dd></div></dl>
+                <button id="staff-save" type="submit" class="primary" disabled>Salvar perfil</button>
+              </form>
+            </div>
+            <p id="staff-profile-status" class="dash-feedback" role="status"></p>
+          </section>
+          <section id="access-panel" class="shop-section" hidden aria-labelledby="access-title">
+            <div class="dash-page-head"><div><h2 id="access-title">Acessos</h2><p>Crie níveis e defina quais áreas cada pessoa da equipe pode usar.</p></div></div>
+            <div class="access-grid">
+              <article class="dash-card">
+                <h3>Níveis de acesso</h3>
+                <label for="access-level-edit">Nível</label>
+                <select id="access-level-edit"><option value="">Criar novo nível</option></select>
+                <form id="access-level-form" class="staff-editor">
+                  <label for="access-level-name">Nome do nível</label><input id="access-level-name" required minlength="2" maxlength="50" placeholder="Ex. Operação da loja">
+                  <fieldset class="access-capabilities"><legend>Áreas permitidas</legend>
+                    <label><input type="checkbox" name="capability" value="overview"> Visão geral</label>
+                    <label><input type="checkbox" name="capability" value="orders"> Pedidos</label>
+                    <label><input type="checkbox" name="capability" value="catalog"> Catálogo</label>
+                    <label><input type="checkbox" name="capability" value="wholesale"> Atacado</label>
+                    <label><input type="checkbox" name="capability" value="clients"> Clientes e equipe</label>
+                    <label><input type="checkbox" name="capability" value="marketing"> Remarketing</label>
+                  </fieldset>
+                  <button type="submit" class="primary" disabled>Salvar nível</button>
+                </form>
+              </article>
+              <article class="dash-card">
+                <h3>Atribuir acesso</h3><p>Use o e-mail de uma conta cadastrada e confirmada.</p>
+                <form id="access-assign-form" class="staff-editor">
+                  <label for="access-email">E-mail</label><input id="access-email" type="email" required maxlength="254" placeholder="pessoa@empresa.com">
+                  <label for="access-role">Nível de acesso</label><select id="access-role" required></select>
+                  <button type="submit" class="primary" disabled>Aplicar acesso</button>
+                </form>
+              </article>
+            </div>
+            <p id="staff-access-status" class="dash-feedback" role="status"></p>
+            <article class="dash-card access-team"><h3>Equipe com acesso ao painel</h3>
+              <div class="team-table"><table><thead><tr><th scope="col">E-mail</th><th scope="col">Nível</th><th scope="col">Ações</th></tr></thead><tbody id="access-team-rows"></tbody></table></div>
+            </article>
           </section>
           <section id="preferences-panel" class="shop-section" hidden aria-labelledby="preferences-title">
             <h2 id="preferences-title">Preferências de comunicação</h2>

@@ -154,7 +154,7 @@ function renderCart() {
 }
 
 async function loadOrders(role) {
-  const isAdmin = role === "MAIN";
+  const isAdmin = ["MAIN", "STAFF"].includes(role);
   const result = await shopApi(isAdmin ? "/api/admin/orders" : "/api/shop/orders");
   orderList.replaceChildren();
   if (!result.orders.length) orderList.append(element("p", "Nenhum pedido registrado."));
@@ -346,8 +346,7 @@ document.addEventListener("nhac:session", event => {
   shopSession = new AbortController();
   withFeedback(async () => {
     if (isCustomer) await loadStore();
-    else isDemo = (await shopApi("/api/shop/products")).demo;
     note.hidden = !isDemo || !isCustomer;
-    await loadOrders(role);
+    if (isCustomer || ["orders", "catalog", "wholesale"].some(area => canUseAdminArea(role, area))) await loadOrders(role);
   });
 });

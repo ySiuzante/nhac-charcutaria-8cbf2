@@ -14,8 +14,17 @@
   const compact = new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 });
   const formatter = new Intl.NumberFormat("pt-BR");
   const dates = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", timeZone: "UTC" });
-  const panels = ["sales-dashboard", "order-panel", "catalog-panel", "wholesale-panel", "team", "marketing-panel"];
-  const adminLinks = ["catalog-nav", "wholesale-nav", "team-nav", "marketing-nav"];
+  const areas = {
+    "sales-dashboard": ["overview-nav", "overview"],
+    "order-panel": ["orders-nav", "orders"],
+    "catalog-panel": ["catalog-nav", "catalog"],
+    "wholesale-panel": ["wholesale-nav", "wholesale"],
+    "team": ["team-nav", "clients"],
+    "marketing-panel": ["marketing-nav", "marketing"],
+    "access-panel": ["access-nav", "main"],
+    "my-account-panel": ["my-account-nav", null]
+  };
+  const panels = Object.keys(areas);
   let role;
   let daily = [];
   let chartFrame;
@@ -34,7 +43,8 @@
   const text = (id, content) => { get(id).textContent = content; };
   const amount = cents => money.format(Number(cents) / 100);
   const formatDay = day => dates.format(new Date(day + "T12:00:00Z"));
-  const isAdmin = () => role === "MAIN";
+  const isAdmin = () => role === "MAIN" || role === "STAFF";
+  const permitted = permission => permission === null ? isAdmin() : canUseAdminArea(role, permission);
 
   async function api(path, data, signal = session?.signal) {
     const response = await window.nhacHosted.request(path, {
@@ -62,7 +72,8 @@
   function showPanel(focus = false) {
     if (!isAdmin()) return;
     const target = window.location.hash.slice(1);
-    const active = panels.includes(target) ? target : "sales-dashboard";
+    const available = panels.filter(id => permitted(areas[id][1]));
+    const active = available.includes(target) ? target : available[0];
     for (const id of panels) get(id).hidden = active !== id;
     for (const link of navigation.querySelectorAll("a:not([hidden])")) {
       if (link.hash === "#" + active) link.setAttribute("aria-current", "location");
@@ -91,6 +102,9 @@
     }
     if (active === "sales-dashboard") loadMetrics();
     if (active === "marketing-panel") loadContacts();
+    if (active === "access-panel" || active === "my-account-panel") {
+      document.dispatchEvent(new CustomEvent("nhac:staff-panel", { detail: active }));
+    }
   }
 
   function showPreferences(focus = false) {
@@ -477,11 +491,13 @@
     themeButton.hidden = !admin;
     workspace.querySelector(".dash-brand").hidden = !admin;
     get("sidebar-label").hidden = admin;
-    for (const id of adminLinks) get(id).hidden = !admin;
+    for (const [id, permission] of Object.values(areas)) {
+      get(id).hidden = admin ? !permitted(permission) : !["overview-nav", "orders-nav"].includes(id);
+    }
     const overviewLink = get("overview-nav");
     overviewLink.href = admin ? "#sales-dashboard" : "#account-name";
     for (const id of ["account-greeting", "account-status-card"]) get(id).hidden = admin;
-    get("order-search-label").hidden = !admin;
+    get("order-search-label").hidden = !canUseAdminArea(role, "orders");
     get("preferences-nav").hidden = role !== "CUSTOMER";
     get("preferences-panel").hidden = role !== "CUSTOMER";
     get("marketing-consent").checked = false;
