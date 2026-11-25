@@ -21,3 +21,11 @@ Configure estas variáveis para as funções no Netlify e execute um novo deploy
 | `NHAC_MARKETING_FROM` | Remetente de domínio verificado no Resend |
 
 O envio é individual. A aba exibe até 200 contatos com consentimento ativo e e-mail verificado. Cada mensagem contém link de descadastro. O cliente também pode revogar a autorização na aba Preferências. Se trocar o domínio público ou o projeto Supabase, atualize os endereços das funções juntamente com a configuração pública da plataforma.
+
+## Habilitar confirmação de acesso por SMS
+
+1. No Supabase, habilite o complemento Phone MFA no plano compatível e configure o provedor de SMS. Habilite o cadastro e a verificação de fatores por telefone. Mantenha os códigos em seis dígitos.
+2. Confirme a entrega de código em um celular autorizado, inclusive o envio para +55 quando aplicável.
+3. No Netlify, adicione `NHAC_SMS_MFA=true` no escopo de build e publique novamente. A variável é apenas uma chave de interface. Credenciais do provedor ficam no Supabase.
+4. Quem já usa um aplicativo autenticador pode abrir **Minha conta** após o login e confirmar o celular. Com um celular verificado, o SMS passa a ser a primeira opção no login. O aplicativo continua disponível para recuperação.
+5. Em caso de falha na implantação, desative a opção somente após garantir que as contas com SMS têm outro fator utilizável. Preserve a exigência do nível AAL2.

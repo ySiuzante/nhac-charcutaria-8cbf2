@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#19cfc5">
   <title>Área de acesso | Nhac!</title>
   <link rel="stylesheet" href="/styles.css">
+  <script src="/phone-mfa.js" defer></script>
   <script src="/client.js" defer></script>
   <script src="/shop.js" defer></script>
   <script src="/dashboard.js" defer></script>
@@ -48,6 +49,12 @@
           <button class="primary" type="submit">Concluir cadastro</button>
           <button id="register-back" class="text-button auth-switch" type="button">Voltar ao login</button>
         </form>
+        <section id="sms-login" hidden aria-labelledby="sms-login-title">
+          <h3 id="sms-login-title">Confirme seu acesso por SMS</h3>
+          <div id="sms-login-form"></div>
+          <button id="sms-use-app" type="button" class="text-button auth-switch">Usar aplicativo autenticador</button>
+          <button id="sms-back" type="button" class="text-button auth-switch">Voltar ao login</button>
+        </section>
         <form id="mfa-form" hidden>
           <h3>Confirme seu acesso administrativo</h3>
           <button id="mfa-enroll" type="button" class="text-button" hidden>Configurar autenticador</button>
@@ -56,6 +63,7 @@
           <input id="mfa-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
           <p id="mfa-message" class="message" role="alert"></p>
           <button class="primary" type="submit">Confirmar código</button>
+          <button id="mfa-use-sms" type="button" class="text-button auth-switch" hidden>Usar código por SMS</button>
           <button id="mfa-back" class="text-button auth-switch" type="button">Voltar ao login</button>
         </form>
         <p class="help">Os acessos são disponibilizados pela equipe responsável pela Nhac!.</p>
@@ -198,6 +206,10 @@
               </form>
             </div>
             <p id="staff-profile-status" class="dash-feedback" role="status"></p>
+            <article id="sms-staff" class="dash-card" hidden>
+              <h3>Confirmação de acesso por SMS</h3>
+              <div id="sms-staff-form"></div>
+            </article>
           </section>
           <section id="access-panel" class="shop-section" hidden aria-labelledby="access-title">
             <div class="dash-page-head"><div><h2 id="access-title">Acessos</h2><p>Crie níveis e defina quais áreas cada pessoa da equipe pode usar.</p></div></div>
@@ -241,5 +253,18 @@
       </div>
     </section>
   </main>
+  <template id="sms-verification-template">
+    <form class="sms-form">
+      <div data-phone-field>
+        <label>Celular com código do país e DDD<input name="phone" type="tel" autocomplete="tel" maxlength="26" placeholder="+55 (00) 00000-0000"></label>
+      </div>
+      <button type="button" class="text-button" data-send-sms>Enviar código por SMS</button>
+      <div data-sms-code hidden>
+        <label>Código recebido por SMS<input name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" disabled required></label>
+        <button type="submit" class="primary">Confirmar código</button>
+      </div>
+      <p data-sms-status class="message" role="status"></p>
+    </form>
+  </template>
 </body>
 </html>

@@ -23,6 +23,7 @@
   let accessBusy = false;
   let profileBusy = false;
   let photoBusy = false;
+  let staffSmsFlow;
 
   function toggleForms() {
     get("staff-save").disabled = !session || profileBusy || photoBusy;
@@ -255,8 +256,34 @@
     updateAccess(session, "/api/admin/access/assign", {email, level}, "Acesso atualizado.");
   });
 
+  async function loadStaffSms(current) {
+    const section = get("sms-staff");
+    if (!window.nhacHosted.smsMfaEnabled) return;
+    const container = get("sms-staff-form");
+    try {
+      const existing = await window.nhacHosted.getPhoneFactor();
+      if (current !== session) return;
+      section.hidden = false;
+      staffSmsFlow?.dispose();
+      if (existing) {
+        container.textContent = "Celular verificado. O SMS será a primeira opção no próximo login.";
+      } else {
+        staffSmsFlow = window.nhacPhoneVerification.mount(container, null, () => loadStaffSms(current));
+      }
+    } catch {
+      if (current === session) {
+        section.hidden = false;
+        container.textContent = "Não foi possível consultar sua configuração por SMS.";
+      }
+    }
+  }
+
   document.addEventListener("nhac:session", event => {
     session?.abort();
+    staffSmsFlow?.dispose();
+    staffSmsFlow = undefined;
+    get("sms-staff").hidden = true;
+    get("sms-staff-form").replaceChildren();
     userRole = event.detail;
     session = ["MAIN", "STAFF"].includes(userRole) ? new AbortController() : undefined;
     profileBusy = false;
@@ -279,7 +306,10 @@
   document.addEventListener("nhac:staff-panel", event => {
     queueMicrotask(() => {
       if (!session) return;
-      if (event.detail === "my-account-panel" && !profileBusy && !photoBusy) loadProfile(session);
+      if (event.detail === "my-account-panel" && !profileBusy && !photoBusy) {
+        loadProfile(session);
+        if (!staffSmsFlow) loadStaffSms(session);
+      }
       if (event.detail === "access-panel" && userRole === "MAIN") updateAccess(session, undefined, undefined, "");
     });
   });
